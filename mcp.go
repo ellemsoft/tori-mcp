@@ -61,7 +61,6 @@ func runMCP(port string) {
 	http.ListenAndServe(port, mux)
 }
 
-
 func searchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	c := newClient()
 	result, err := c.search(searchParams{

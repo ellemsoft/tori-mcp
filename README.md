@@ -105,7 +105,7 @@ tori --mcp 127.0.0.1:8081 # bind to specific address
 
 Tools: `search`, `show`, `filters`, `categories`, `locations`
 
-Rate limited: 120 req/min per IP. Stats persisted to `/opt/tori/stats.json`.
+Rate limited: 60 req/min per MCP session. Stats persisted to `/opt/tori/stats.json`.
 
 ### Deploy
 
