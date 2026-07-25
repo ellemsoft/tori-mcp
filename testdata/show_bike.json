@@ -1,0 +1,32 @@
+{
+  "id": "34917144",
+  "heading": "Test Bike Listing",
+  "location": "Test City",
+  "price": {
+    "amount": 1200,
+    "currency_code": "EUR"
+  },
+  "ad_type": 67,
+  "trade_type": "Myyd\u00e4\u00e4n",
+  "timestamp": 1784201951000,
+  "image": {
+    "url": "https://img.tori.net/test.jpg"
+  },
+  "canonical_url": "https://www.tori.fi/test/1",
+  "flags": [
+    "private"
+  ],
+  "extras": [],
+  "labels": [
+    {
+      "text": "Yksityinen",
+      "type": "SECONDARY"
+    }
+  ],
+  "brand": "",
+  "description": "Test description.",
+  "details": {
+    "Kunto": "Test",
+    "Runkokoko": "Test"
+  }
+}

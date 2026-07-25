@@ -1,0 +1,23 @@
+# Binaries
+tori
+tori-mac
+*.exe
+
+# Test binaries
+*.test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deploy artifacts
+/tmp/
+deploy/.env
+deploy/
+tori
+.DS_Store
