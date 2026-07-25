@@ -1,6 +1,6 @@
 # AGENTS.md — tori-cli
 
-Search Tori.fi from the command line. One binary, zero dependencies, stdlib only.
+Search Tori.fi from the command line. One binary, one dependency (mcp-go for MCP protocol).
 
 ## Build
 
