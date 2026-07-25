@@ -83,7 +83,7 @@ func (c *client) get(path, service string) (map[string]any, error) {
 		if len(preview) > 500 {
 			preview = preview[:500]
 		}
-		log.Printf("[api-error] %d from upstream: %s", resp.StatusCode, preview[:100])
+		log.Printf("[api-error] %d from upstream: %s", resp.StatusCode, preview[:min(len(preview),100)])
 		return nil, fmt.Errorf("%d %s: %s", resp.StatusCode, resp.Status, preview)
 	}
 

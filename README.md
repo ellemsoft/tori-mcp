@@ -17,7 +17,6 @@ mv tori /usr/local/bin/  # optional
 tori search iphone
 
 # With filters
-tori search iphone --price-from 100 --price-to 500 --condition good
 tori search sähköpyörä --filter bikes_type=8 --filter condition=2
 
 # Category + location discovery
@@ -53,7 +52,6 @@ tori show 44583092 --fetch-body --json  # includes description + detail tags
 | `--location CODE` | Location code |
 | `--price-from N` | Min price EUR |
 | `--price-to N` | Max price EUR |
-| `--condition TYPE` | new \| like-new \| good \| fair |
 | `--shipping` | ToriDiili items only |
 | `--filter K=V` | Raw filter param (repeatable) |
 | `--page N` | Page number (default 1) |
@@ -120,7 +118,6 @@ scp tori root@<host>:/opt/tori/
 systemctl enable --now tori-mcp
 ```
 
-Systemd unit + Caddy config in `deploy/`. Full guide in `deploy/DEPLOY.md`.
 
 ## Disclaimer
 

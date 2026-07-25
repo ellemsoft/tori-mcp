@@ -20,7 +20,7 @@ display.go   Output formatting (tables, JSON)
 
 ## Conventions
 
-- **Stdlib only.** No external modules. `net/http`, `encoding/json`, `text/tabwriter`, `flag`, `crypto/*`.
+- **Stdlib + mcp-go.** No external modules. `net/http`, `encoding/json`, `text/tabwriter`, `flag`, `crypto/*`.
 - **LLM-friendly.** The core use case is an LLM invoking this CLI. Default table output is compact and parseable. `--json` for structured data, `--raw` for passthrough API JSON.
 - **No auth.** Public search endpoints work with only the signing key + iOS app headers. No bearer tokens needed.
 - **One round-trip per command.** Search, categories, and locations each make exactly one API call (search also fetches pole position in parallel).
