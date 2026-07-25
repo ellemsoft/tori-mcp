@@ -97,6 +97,7 @@ Search is public. Uses the same endpoints as the Tori iOS app.
 ## MCP Server
 
 **Hosted**: `https://tori-mcp.ellemsoft.com/mcp` — no setup needed.
+Rate limited: 60 req/min per session, 300 req/min outbound to source API.
 
 The CLI doubles as an MCP server:
 
