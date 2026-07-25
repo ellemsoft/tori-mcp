@@ -96,6 +96,8 @@ Search is public. Uses the same endpoints as the Tori iOS app.
 
 ## MCP Server
 
+**Hosted**: `https://tori-mcp.ellemsoft.com/mcp` — no setup needed.
+
 The CLI doubles as an MCP server:
 
 ```bash
