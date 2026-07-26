@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -61,9 +60,9 @@ func sessionMiddleware(next http.Handler) http.Handler {
 	sl := newSessionLimiter()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		limitKey := requestLimitKey(r)
-		log.Printf("[req] method=%s path=%s", r.Method, r.URL.Path)
+		serverLogf("[req] method=%s path=%s", r.Method, r.URL.Path)
 		if !sl.allow(limitKey, sessionLimitPerMinute) {
-			log.Printf("[rate-limit] client exceeded limit")
+			serverLogf("[rate-limit] client exceeded limit")
 			http.Error(w, "rate limited", http.StatusTooManyRequests)
 			return
 		}

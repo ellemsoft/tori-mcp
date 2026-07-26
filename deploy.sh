@@ -3,7 +3,19 @@
 # Run from ~/Development/tori-cli (or any dir with built binaries)
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/deploy/.env" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/deploy/.env"
+  set +a
+fi
+
 HOST="${TORI_HOST:-}"
+if [[ -z "$HOST" ]]; then
+  echo "Set TORI_HOST in deploy/.env or the environment" >&2
+  exit 1
+fi
 USER="root"
 REMOTE_TORI="/opt/tori"
 REMOTE_OIKOTIE="/opt/oikotie"

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"sync"
 	"time"
 )
@@ -46,7 +45,7 @@ func (l *outboundLimiter) wait() {
 			return
 		}
 		sleepFor := time.Duration((1-l.tokens)/l.rate*float64(time.Second) + 0.5)
-		log.Printf("[rate-limit] outbound throttled for %v", sleepFor.Round(time.Millisecond))
+		serverLogf("[rate-limit] outbound throttled for %v", sleepFor.Round(time.Millisecond))
 		time.Sleep(sleepFor)
 	}
 }

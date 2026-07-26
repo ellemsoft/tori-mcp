@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,17 +17,17 @@ func serveHTTP(addr string, handler http.Handler) {
 
 	go func() {
 		<-ctx.Done()
-		log.Printf("[shutdown] flushing stats and stopping HTTP server")
+		serverLogf("[shutdown] flushing stats and stopping HTTP server")
 		flushStats()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.Printf("[shutdown] forced HTTP shutdown: %v", err)
+			serverLogf("[shutdown] forced HTTP shutdown: %v", err)
 		}
 	}()
 
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("[server] listen failed: %v", err)
+		serverLogf("[server] listen failed: %v", err)
 		flushStats()
 		os.Exit(1)
 	}

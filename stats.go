@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -30,7 +29,7 @@ func initStats(path string) {
 		var s dailyStats
 		if json.Unmarshal(data, &s) == nil && s.Date == stats.Date {
 			stats = s
-			log.Printf("[stats] loaded %d requests from today", stats.Total)
+			serverLogf("[stats] loaded %d requests from today", stats.Total)
 		}
 	}
 
@@ -68,8 +67,8 @@ func flushStats() {
 		return
 	}
 	if err := os.WriteFile(statsPath, data, 0644); err != nil {
-		log.Printf("[stats] failed to write: %v", err)
+		serverLogf("[stats] failed to write: %v", err)
 	} else {
-		log.Printf("[stats] flushed: %d requests today (%v)", stats.Total, stats.Tools)
+		serverLogf("[stats] flushed: %d requests today (%v)", stats.Total, stats.Tools)
 	}
 }

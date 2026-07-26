@@ -12,6 +12,7 @@ import (
 )
 
 func runMCP(port string) {
+	enableServerLogs = true
 	s := server.NewMCPServer("tori-mcp", "1.0.0", server.WithToolCapabilities(true))
 
 	s.AddTool(mcp.NewTool("search",
