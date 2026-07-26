@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -41,16 +39,6 @@ func initStats(path string) {
 		for range time.Tick(1 * time.Hour) {
 			flushStats()
 		}
-	}()
-
-	// Graceful shutdown
-	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-		<-ch
-		log.Println("[stats] shutting down, flushing stats...")
-		flushStats()
-		os.Exit(0)
 	}()
 }
 

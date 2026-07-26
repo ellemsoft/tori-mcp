@@ -58,7 +58,7 @@ func runMCP(port string) {
 		w.Write([]byte(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Tori MCP</title><style>body{font-family:system-ui;max-width:400px;margin:40px auto;padding:20px}</style></head><body><h1>Tori.fi MCP</h1><p>Connect at <code>/mcp</code> · <a href="/health">/health</a></p><hr><p style="color:#888;font-size:.85em">Unofficial. Docs: <a href="https://ellemsoft.com/mcps">ellemsoft.com/mcps</a></p>  <p style="color:#888;font-size:.75rem;margin-top:20px">Rate limited: 60 req/min per session. Outbound: Outbound to source services: ~50 per 10 seconds.</p>
 </body></html>`))
 	})
-	http.ListenAndServe(port, mux)
+	serveHTTP(port, mux)
 }
 
 func searchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

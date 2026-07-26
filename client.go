@@ -79,12 +79,8 @@ func (c *client) get(path, service string) (map[string]any, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		preview := string(body)
-		if len(preview) > 500 {
-			preview = preview[:500]
-		}
-		log.Printf("[api-error] %d from upstream: %s", resp.StatusCode, preview[:min(len(preview), 100)])
-		return nil, fmt.Errorf("%d %s: %s", resp.StatusCode, resp.Status, preview)
+		log.Printf("[api-error] %d from upstream service=%s", resp.StatusCode, service)
+		return nil, fmt.Errorf("%d %s", resp.StatusCode, resp.Status)
 	}
 
 	var data map[string]any

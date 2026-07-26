@@ -2,10 +2,14 @@ package main
 
 import (
 	"log"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
+
+const sessionLimitPerMinute = 60
 
 type sessionLimiter struct {
 	mu       sync.Mutex
@@ -56,12 +60,10 @@ func (sl *sessionLimiter) cleanup(olderThan time.Duration) {
 func sessionMiddleware(next http.Handler) http.Handler {
 	sl := newSessionLimiter()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionID := r.Header.Get("Mcp-Session-Id")
-		ua := r.Header.Get("User-Agent")
-		org := r.Header.Get("OpenAI-Organization")
-		log.Printf("[req] session=%s ua=%s org=%s method=%s", truncS(sessionID, 32), truncS(ua, 80), truncS(org, 40), r.Method)
-		if !sl.allow(sessionID, 60) {
-			log.Printf("[rate-limit] session %s exceeded limit", truncS(sessionID, 16))
+		limitKey := requestLimitKey(r)
+		log.Printf("[req] method=%s path=%s", r.Method, r.URL.Path)
+		if !sl.allow(limitKey, sessionLimitPerMinute) {
+			log.Printf("[rate-limit] client exceeded limit")
 			http.Error(w, "rate limited", http.StatusTooManyRequests)
 			return
 		}
@@ -70,9 +72,28 @@ func sessionMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func truncS(s string, n int) string {
-	if len(s) <= n {
-		return s
+func requestLimitKey(r *http.Request) string {
+	if sessionID := strings.TrimSpace(r.Header.Get("Mcp-Session-Id")); sessionID != "" {
+		return "session:" + sessionID
 	}
-	return s[:n]
+	if forwardedFor := firstForwardedFor(r.Header.Get("X-Forwarded-For")); forwardedFor != "" {
+		return "ip:" + forwardedFor
+	}
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return "ip:" + realIP
+	}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && host != "" {
+		return "ip:" + host
+	}
+	if remoteAddr := strings.TrimSpace(r.RemoteAddr); remoteAddr != "" {
+		return "remote:" + remoteAddr
+	}
+	return ""
+}
+
+func firstForwardedFor(header string) string {
+	if i := strings.IndexByte(header, ','); i >= 0 {
+		header = header[:i]
+	}
+	return strings.TrimSpace(header)
 }

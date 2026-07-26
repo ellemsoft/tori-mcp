@@ -15,6 +15,9 @@ type outboundLimiter struct {
 }
 
 func newOutboundLimiter(reqPerMin int) *outboundLimiter {
+	if reqPerMin < 1 {
+		reqPerMin = 1
+	}
 	rate := float64(reqPerMin) / 60.0
 	return &outboundLimiter{
 		tokens: rate * 5, // burst of ~5 seconds worth
@@ -26,22 +29,24 @@ func newOutboundLimiter(reqPerMin int) *outboundLimiter {
 
 func (l *outboundLimiter) wait() {
 	l.mu.Lock()
-	now := time.Now()
-	elapsed := now.Sub(l.last).Seconds()
-	l.tokens += elapsed * l.rate
-	if l.tokens > l.burst {
-		l.tokens = l.burst
-	}
-	l.last = now
-	if l.tokens < 1 {
-		sleepFor := time.Duration((1 - l.tokens) / l.rate * float64(time.Second))
+	defer l.mu.Unlock()
+
+	for {
+		now := time.Now()
+		elapsed := now.Sub(l.last).Seconds()
+		if elapsed > 0 {
+			l.tokens += elapsed * l.rate
+			if l.tokens > l.burst {
+				l.tokens = l.burst
+			}
+			l.last = now
+		}
+		if l.tokens >= 1 {
+			l.tokens--
+			return
+		}
+		sleepFor := time.Duration((1-l.tokens)/l.rate*float64(time.Second) + 0.5)
 		log.Printf("[rate-limit] outbound throttled for %v", sleepFor.Round(time.Millisecond))
-		l.mu.Unlock()
 		time.Sleep(sleepFor)
-		l.mu.Lock()
-		l.tokens = 0
-	} else {
-		l.tokens--
 	}
-	l.mu.Unlock()
 }
