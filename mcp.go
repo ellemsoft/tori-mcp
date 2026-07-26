@@ -53,7 +53,7 @@ func runMCP(port string) {
 		return
 	}
 
-	initStats("/opt/tori/stats.json")
+	initStats("/var/lib/tori/stats.json")
 	httpServer := server.NewStreamableHTTPServer(s, server.WithDisableLocalhostProtection(true))
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", sessionMiddleware(httpServer))
