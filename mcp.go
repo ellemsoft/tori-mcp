@@ -13,7 +13,7 @@ import (
 
 func runMCP(port string) {
 	enableServerLogs = true
-	s := server.NewMCPServer("tori-mcp", "1.0.0", server.WithToolCapabilities(true))
+	s := server.NewMCPServer("tori-mcp", "1.0.1", server.WithToolCapabilities(true))
 
 	s.AddTool(mcp.NewTool("search",
 		mcp.WithDescription("Search Tori.fi. Returns id, heading, price, location, url. ALWAYS include the canonical_url when presenting a listing so the user can view the original listing and contact the seller. Use filters tool to discover filter codes."),
@@ -25,23 +25,27 @@ func runMCP(port string) {
 		mcp.WithBoolean("shipping", mcp.Description("ToriDiili items only")),
 		mcp.WithNumber("page", mcp.Description("Page number (default 1)")),
 		mcp.WithString("filter", mcp.Description("Raw filter key=value, comma-separated for multiple")),
+		readOnlyTool(),
 	), searchHandler)
 
 	s.AddTool(mcp.NewTool("show",
 		mcp.WithDescription("Get listing details by ID. fetch_body=true for full description + detail tags."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Listing ID")),
 		mcp.WithBoolean("fetch_body", mcp.Description("Include full description from listing page")),
+		readOnlyTool(),
 	), showHandler)
 
 	s.AddTool(mcp.NewTool("filters",
 		mcp.WithDescription("Show available filter options for a query. Use to discover filter codes."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query to get filters for")),
 		mcp.WithString("category", mcp.Description("Optional category code")),
+		readOnlyTool(),
 	), filtersHandler)
 
 	s.AddTool(mcp.NewTool("categories",
 		mcp.WithDescription("Browse category tree. Pass a code to drill down or a name to search."),
 		mcp.WithString("query", mcp.Description("Category code to drill down, or name to search")),
+		readOnlyTool(),
 	), categoriesHandler)
 
 	if port == "" || port == "stdio" {
@@ -56,7 +60,7 @@ func runMCP(port string) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Tori MCP</title><style>body{font-family:system-ui;max-width:400px;margin:40px auto;padding:20px}</style></head><body><h1>Tori.fi MCP</h1><p>Connect at <code>/mcp</code> · <a href="/health">/health</a></p><hr><p style="color:#888;font-size:.85em">Unofficial. Docs: <a href="https://ellemsoft.com/mcps">ellemsoft.com/mcps</a></p>  <p style="color:#888;font-size:.75rem;margin-top:20px">Rate limited: 60 req/min per session. Outbound: Outbound to source services: ~50 per 10 seconds.</p>
+		w.Write([]byte(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Tori MCP</title><style>body{font-family:system-ui;max-width:400px;margin:40px auto;padding:20px}</style></head><body><h1>Tori.fi MCP</h1><p>Connect at <code>/mcp</code> · <a href="/health">/health</a></p><hr><p style="color:#888;font-size:.85em">Unofficial. Docs: <a href="https://ellemsoft.com/mcps">ellemsoft.com/mcps</a></p>  <p style="color:#888;font-size:.75rem;margin-top:20px">Rate limited: 60 req/min per session. Outbound to source services: 300 req/min global.</p>
 </body></html>`))
 	})
 	serveHTTP(port, mux)
@@ -140,6 +144,15 @@ func getPage(req mcp.CallToolRequest) int {
 	return n
 }
 func jsonOK(v any) string { b, _ := json.MarshalIndent(v, "", "  "); return string(b) }
+
+func readOnlyTool() mcp.ToolOption {
+	return mcp.WithToolAnnotation(mcp.ToolAnnotation{
+		ReadOnlyHint:    mcp.ToBoolPtr(true),
+		DestructiveHint: mcp.ToBoolPtr(false),
+		IdempotentHint:  mcp.ToBoolPtr(true),
+		OpenWorldHint:   mcp.ToBoolPtr(true),
+	})
+}
 
 func getArgs(req mcp.CallToolRequest) map[string]any {
 	if m, ok := req.Params.Arguments.(map[string]any); ok {
