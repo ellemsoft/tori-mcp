@@ -132,14 +132,16 @@ func runSearch(args []string) {
 		Page: *page, ExtraFilters: []string(filters),
 	}
 	if *raw {
-		data, _ := c.searchRaw(params)
+		data, err := c.searchRaw(params)
+		if err != nil {
+			exitErr(err)
+		}
 		displayRawJSON(data)
 		return
 	}
 	result, err := c.search(params)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "tori: %v\n", err)
-		os.Exit(1)
+		exitErr(err)
 	}
 	if p, _ := c.polePosition(params); p != nil {
 		result.Promoted = p
@@ -168,7 +170,10 @@ func runFilters(args []string) {
 
 	c := newClient()
 	params := searchParams{Q: strings.Join(fs.Args(), " "), Category: *category, Location: *location, IncludeFilters: true}
-	data, _ := c.filters(params)
+	data, err := c.filters(params)
+	if err != nil {
+		exitErr(err)
+	}
 	displayFilters(data)
 }
 
@@ -186,7 +191,10 @@ func runCategories(args []string) {
 
 	query := strings.Join(positional, " ")
 	c := newClient()
-	cats, _ := c.categories()
+	cats, err := c.categories()
+	if err != nil {
+		exitErr(err)
+	}
 	if isCode(query) {
 		cats = findChildren(cats, query)
 	} else {
@@ -210,7 +218,10 @@ func isCode(s string) bool {
 
 func runLocations(args []string) {
 	c := newClient()
-	locs, _ := c.locations()
+	locs, err := c.locations()
+	if err != nil {
+		exitErr(err)
+	}
 	if len(args) > 0 {
 		locs = filterLocations(locs, strings.Join(args, " "))
 	}
@@ -235,11 +246,17 @@ func runShow(args []string) {
 	}
 
 	c := newClient()
-	l, _ := c.show(positional[0])
+	l, err := c.show(positional[0])
+	if err != nil {
+		exitErr(err)
+	}
 
 	if *withFetchBody && l != nil && l.CanonicalURL != "" {
 		body, details, err := c.fetchBody(l.CanonicalURL)
-		if err == nil && body != "" {
+		if err != nil {
+			exitErr(err)
+		}
+		if body != "" {
 			l.Description = body
 			l.Details = details
 		}
@@ -252,4 +269,9 @@ func runShow(args []string) {
 		return
 	}
 	displayListing(l)
+}
+
+func exitErr(err error) {
+	fmt.Fprintf(os.Stderr, "tori: %v\n", err)
+	os.Exit(1)
 }
