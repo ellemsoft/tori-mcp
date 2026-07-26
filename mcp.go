@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,9 +10,20 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func runMCP(port string) {
-	enableServerLogs = true
-	s := server.NewMCPServer("tori-mcp", "1.0.1", server.WithToolCapabilities(true))
+type filtersResult struct {
+	Filters []filterItem `json:"filters"`
+}
+
+type categoriesResult struct {
+	Categories []categoryNode `json:"categories"`
+}
+
+type locationsResult struct {
+	Locations []locationNode `json:"locations"`
+}
+
+func newToriMCPServer() *server.MCPServer {
+	s := server.NewMCPServer("tori-mcp", "1.0.2", server.WithToolCapabilities(true))
 
 	s.AddTool(mcp.NewTool("search",
 		mcp.WithDescription("Search Tori.fi. Returns id, heading, price, location, url. ALWAYS include the canonical_url when presenting a listing so the user can view the original listing and contact the seller. Use filters tool to discover filter codes."),
@@ -25,6 +35,7 @@ func runMCP(port string) {
 		mcp.WithBoolean("shipping", mcp.Description("ToriDiili items only")),
 		mcp.WithNumber("page", mcp.Description("Page number (default 1)")),
 		mcp.WithString("filter", mcp.Description("Raw filter key=value, comma-separated for multiple")),
+		mcp.WithOutputSchema[searchResult](),
 		readOnlyTool(),
 	), searchHandler)
 
@@ -32,6 +43,7 @@ func runMCP(port string) {
 		mcp.WithDescription("Get listing details by ID. fetch_body=true for full description + detail tags."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Listing ID")),
 		mcp.WithBoolean("fetch_body", mcp.Description("Include full description from listing page")),
+		mcp.WithOutputSchema[listing](),
 		readOnlyTool(),
 	), showHandler)
 
@@ -39,14 +51,30 @@ func runMCP(port string) {
 		mcp.WithDescription("Show available filter options for a query. Use to discover filter codes."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query to get filters for")),
 		mcp.WithString("category", mcp.Description("Optional category code")),
+		mcp.WithOutputSchema[filtersResult](),
 		readOnlyTool(),
 	), filtersHandler)
 
 	s.AddTool(mcp.NewTool("categories",
 		mcp.WithDescription("Browse category tree. Pass a code to drill down or a name to search."),
 		mcp.WithString("query", mcp.Description("Category code to drill down, or name to search")),
+		mcp.WithOutputSchema[categoriesResult](),
 		readOnlyTool(),
 	), categoriesHandler)
+
+	s.AddTool(mcp.NewTool("locations",
+		mcp.WithDescription("Browse Tori location codes. Pass a name or code to filter locations; use returned code with search.location."),
+		mcp.WithString("query", mcp.Description("Location name or code to search")),
+		mcp.WithOutputSchema[locationsResult](),
+		readOnlyTool(),
+	), locationsHandler)
+
+	return s
+}
+
+func runMCP(port string) {
+	enableServerLogs = true
+	s := newToriMCPServer()
 
 	if port == "" || port == "stdio" {
 		server.ServeStdio(s)
@@ -77,7 +105,7 @@ func searchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	return mcp.NewToolResultText(jsonOK(result)), nil
+	return mcp.NewToolResultStructuredOnly(result), nil
 }
 
 func showHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -90,7 +118,7 @@ func showHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 		body, details, _ := c.fetchBody(l.CanonicalURL)
 		l.Description, l.Details = body, details
 	}
-	return mcp.NewToolResultText(jsonOK(l)), nil
+	return mcp.NewToolResultStructuredOnly(l), nil
 }
 
 func filtersHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -99,19 +127,33 @@ func filtersHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTool
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	return mcp.NewToolResultText(jsonOK(d)), nil
+	return mcp.NewToolResultStructuredOnly(filtersResult{Filters: d}), nil
 }
 
 func categoriesHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	c := newClient()
-	cats, _ := c.categories()
+	cats, err := c.categories()
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
 	q := getStr(req, "query")
 	if isCode(q) {
 		cats = findChildren(cats, q)
 	} else {
 		cats = filterCategories(cats, q)
 	}
-	return mcp.NewToolResultText(jsonOK(cats)), nil
+	return mcp.NewToolResultStructuredOnly(categoriesResult{Categories: cats}), nil
+}
+
+func locationsHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	c := newClient()
+	locs, err := c.locations()
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+	return mcp.NewToolResultStructuredOnly(locationsResult{
+		Locations: filterLocations(locs, getStr(req, "query")),
+	}), nil
 }
 
 func getStr(req mcp.CallToolRequest, key string) string {
@@ -143,7 +185,6 @@ func getPage(req mcp.CallToolRequest) int {
 	}
 	return n
 }
-func jsonOK(v any) string { b, _ := json.MarshalIndent(v, "", "  "); return string(b) }
 
 func readOnlyTool() mcp.ToolOption {
 	return mcp.WithToolAnnotation(mcp.ToolAnnotation{

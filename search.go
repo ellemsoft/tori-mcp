@@ -144,10 +144,10 @@ func (c *client) searchRaw(p searchParams) (map[string]any, error) {
 }
 
 type searchResult struct {
-	Docs     []listing
-	Promoted *listing
-	Total    int
-	Page     int
+	Docs     []listing `json:"docs"`
+	Promoted *listing  `json:"promoted,omitempty"`
+	Total    int       `json:"total"`
+	Page     int       `json:"page"`
 }
 
 func parseSearchResult(data map[string]any, page int) *searchResult {
@@ -167,13 +167,13 @@ func parseSearchResult(data map[string]any, page int) *searchResult {
 // ── Filters ──────────────────────────────────────────────────────────────────
 
 type filterItem struct {
-	Name   string
-	Values []filterValue
+	Name   string        `json:"name"`
+	Values []filterValue `json:"values"`
 }
 type filterValue struct {
-	Label string
-	Value string
-	Count int
+	Label string `json:"label"`
+	Value string `json:"value"`
+	Count int    `json:"count"`
 }
 
 func (c *client) filters(p searchParams) ([]filterItem, error) {
@@ -338,8 +338,8 @@ func parseLabels(m map[string]any, dst *[]label) {
 // ── Categories ───────────────────────────────────────────────────────────────
 
 type categoryNode struct {
-	Code string
-	Name string
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
 func (c *client) categories() ([]categoryNode, error) {
@@ -411,8 +411,8 @@ func findChildren(cats []categoryNode, code string) []categoryNode {
 // ── Locations ────────────────────────────────────────────────────────────────
 
 type locationNode struct {
-	Code string
-	Name string
+	Code string `json:"code"`
+	Name string `json:"name"`
 }
 
 func (c *client) locations() ([]locationNode, error) {

@@ -106,7 +106,9 @@ tori --mcp :8081          # start MCP server
 tori --mcp 127.0.0.1:8081 # bind to specific address
 ```
 
-Tools: `search`, `show`, `filters`, `categories`, `locations`
+Tools: `search`, `show`, `filters`, `categories`, `locations`.
+
+All MCP tools are read-only and return `structuredContent` with `outputSchema`. `filters`, `categories`, and `locations` return wrapper objects (`filters`, `categories`, `locations`) so clients can validate and inspect the result shape reliably.
 
 
 ## Disclaimer
