@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -44,9 +45,7 @@ func newClient() *client {
 
 func (c *client) get(path, service string) (map[string]any, error) {
 	start := time.Now()
-	if enableServerLogs {
-		defer func() { serverLogf("[upstream] %s %v", service, time.Since(start).Round(time.Millisecond)) }()
-	}
+	defer func() { log.Printf("[upstream] %s %v", service, time.Since(start).Round(time.Millisecond)) }()
 
 	cleanPath := path
 	query := ""
@@ -80,7 +79,7 @@ func (c *client) get(path, service string) (map[string]any, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		serverLogf("[api-error] %d from upstream service=%s", resp.StatusCode, service)
+		log.Printf("[api-error] %d from upstream service=%s", resp.StatusCode, service)
 		return nil, fmt.Errorf("%d %s", resp.StatusCode, resp.Status)
 	}
 
