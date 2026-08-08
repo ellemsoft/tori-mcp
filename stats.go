@@ -20,18 +20,7 @@ var (
 )
 
 func initStats(path string) {
-	statsPath = path
-	stats.Tools = make(map[string]int64)
-	stats.Date = time.Now().Format("2006-01-02")
-
-	// Load existing stats
-	if data, err := os.ReadFile(path); err == nil {
-		var s dailyStats
-		if json.Unmarshal(data, &s) == nil && s.Date == stats.Date {
-			stats = s
-			serverLogf("[stats] loaded %d requests from today", stats.Total)
-		}
-	}
+	initStatsAt(path, time.Now())
 
 	// Hourly flush
 	go func() {
@@ -41,25 +30,63 @@ func initStats(path string) {
 	}()
 }
 
-func recordRequest(tool string) {
+func initStatsAt(path string, now time.Time) {
+	statsPath = path
+	stats.Tools = make(map[string]int64)
+	stats.Date = now.Format("2006-01-02")
+
+	// Load existing stats
+	if data, err := os.ReadFile(path); err == nil {
+		var s dailyStats
+		if json.Unmarshal(data, &s) == nil && s.Date == stats.Date {
+			stats = s
+			// Older versions counted every HTTP request under the generic
+			// "mcp" key. Keep Total for that history, but don't mix it into
+			// the per-tool counters.
+			if _, legacy := stats.Tools["mcp"]; legacy {
+				delete(stats.Tools, "mcp")
+				flushStatsAt(now)
+			}
+			serverLogf("[stats] loaded %d requests from today", stats.Total)
+		} else if s.Date != "" && s.Date != stats.Date {
+			stats = s
+			flushStatsAt(now)
+		}
+	}
+}
+
+func recordRequest() {
 	statsMu.Lock()
 	defer statsMu.Unlock()
 
-	today := time.Now().Format("2006-01-02")
-	if stats.Date != today {
-		stats.Date = today
-		stats.Total = 0
+	rollStatsDateLocked(time.Now())
+	stats.Total++
+	if stats.Tools == nil {
 		stats.Tools = make(map[string]int64)
 	}
-	stats.Total++
+}
+
+func recordTool(tool string) {
+	statsMu.Lock()
+	defer statsMu.Unlock()
+
+	rollStatsDateLocked(time.Now())
+	if stats.Tools == nil {
+		stats.Tools = make(map[string]int64)
+	}
 	stats.Tools[tool]++
 }
 
 func flushStats() {
+	flushStatsAt(time.Now())
+}
+
+func flushStatsAt(now time.Time) {
 	statsMu.Lock()
 	defer statsMu.Unlock()
 
-	if stats.Total == 0 {
+	rolled := rollStatsDateLocked(now)
+	if stats.Total == 0 && !rolled {
 		return
 	}
 	data, err := json.Marshal(stats)
@@ -71,4 +98,18 @@ func flushStats() {
 	} else {
 		serverLogf("[stats] flushed: %d requests today (%v)", stats.Total, stats.Tools)
 	}
+}
+
+func rollStatsDateLocked(now time.Time) bool {
+	today := now.Format("2006-01-02")
+	if stats.Date == today {
+		if stats.Tools == nil {
+			stats.Tools = make(map[string]int64)
+		}
+		return false
+	}
+	stats.Date = today
+	stats.Total = 0
+	stats.Tools = make(map[string]int64)
+	return true
 }

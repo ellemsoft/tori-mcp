@@ -95,6 +95,7 @@ func runMCP(port string) {
 }
 
 func searchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	recordTool("search")
 	c := newClient()
 	result, err := c.search(searchParams{
 		Q: getStr(req, "query"), Category: getStr(req, "category"), Location: getStr(req, "location"),
@@ -109,6 +110,7 @@ func searchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 }
 
 func showHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	recordTool("show")
 	c := newClient()
 	l, err := c.show(getStr(req, "id"))
 	if err != nil {
@@ -122,6 +124,7 @@ func showHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolRes
 }
 
 func filtersHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	recordTool("filters")
 	c := newClient()
 	d, err := c.filters(searchParams{Q: getStr(req, "query"), Category: getStr(req, "category"), IncludeFilters: true})
 	if err != nil {
@@ -131,6 +134,7 @@ func filtersHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallTool
 }
 
 func categoriesHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	recordTool("categories")
 	c := newClient()
 	cats, err := c.categories()
 	if err != nil {
@@ -146,6 +150,7 @@ func categoriesHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallT
 }
 
 func locationsHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	recordTool("locations")
 	c := newClient()
 	locs, err := c.locations()
 	if err != nil {

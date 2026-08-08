@@ -66,7 +66,7 @@ func sessionMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "rate limited", http.StatusTooManyRequests)
 			return
 		}
-		recordRequest("mcp")
+		recordRequest()
 		next.ServeHTTP(w, r)
 	})
 }
